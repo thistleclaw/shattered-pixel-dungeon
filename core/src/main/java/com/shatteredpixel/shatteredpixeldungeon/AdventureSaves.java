@@ -140,6 +140,19 @@ public final class AdventureSaves {
         return restore(manualId(index));
     }
 
+    /**
+     * Used after final death, when Shattered has already invalidated gameN/.
+     * Prefer the floor-entry autosave, but if it is unavailable keep the run
+     * recoverable from the first valid manual slot instead of deleting it.
+     */
+    public static boolean restoreBestAvailable() {
+        if (restore(AUTO)) return true;
+        for (int i = 1; i <= MANUAL_SLOTS; i++) {
+            if (restore(manualId(i))) return true;
+        }
+        return false;
+    }
+
     private static boolean restore(String id) {
         int slot = GamesInProgress.curSlot;
         if (!checkpointExistsForCurrentRun(id)) return false;
