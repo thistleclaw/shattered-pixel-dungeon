@@ -182,19 +182,19 @@ public class GamesInProgress {
 	
 	public static void delete( int slot ) {
 		//Normal Shattered invalidates the active slot on final death. In this
-		//fork we immediately put the last floor-entry checkpoint back into the
-		//slot, while keeping the dead hero in memory so the usual game-over UI
-		//can still be shown. This means a battery/app kill on that screen does
-		//not make the checkpoint unreachable on the next launch.
+		//fork any valid Adventure checkpoint means the run is recoverable. Put
+		//the autosave back into gameN/ when available; otherwise fall back to a
+		//manual slot. This also keeps recovery working after an app/battery kill
+		//on the game-over screen.
 		boolean finalDeath = slot == curSlot
 				&& Dungeon.hero != null
 				&& !Dungeon.hero.isAlive()
-				&& AdventureSaves.autoExists();
+				&& AdventureSaves.anyCheckpointExists();
 
 		slotStates.put( slot, null );
 
 		if (finalDeath) {
-			AdventureSaves.restoreAuto();
+			AdventureSaves.restoreBestAvailable();
 		} else {
 			//Victory or an explicit erase should really remove the whole run,
 			//including its rollback snapshots.
