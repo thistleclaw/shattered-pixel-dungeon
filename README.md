@@ -13,7 +13,7 @@ Adventure Mode leaves the normal dungeon generation, enemies, loot, hunger, boss
 
 The v4 edition is the current branch. The 3.2.1 edition exists specifically for older Android devices.
 
-See **[ADVENTURE_MODE.md](ADVENTURE_MODE.md)** for save behavior, build details, compatibility notes and licensing information.
+See **[ADVENTURE_MODE.md](ADVENTURE_MODE.md)** for save behavior, build details and compatibility notes. Release signing is documented in **[docs/adventure-release-signing.md](docs/adventure-release-signing.md)**.
 
 ## Upstream
 
@@ -23,4 +23,4 @@ This fork is **not an official Shattered Pixel Dungeon release**. If you want th
 
 ## License
 
-The project remains licensed under **GPL-3.0-or-later**. See [LICENSE](LICENSE).
+The project remains licensed under **GPL-3.0-or-later**. See [LICENSE.txt](LICENSE.txt).
