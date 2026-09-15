@@ -25,6 +25,15 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Validate Adventure localization placeholders
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -REn '%[sd]' core/src/main/assets/messages/adventure; then
+            echo '::error::Adventure I18NBundle strings must use {0}/{1} MessageFormat placeholders, not printf-style %s/%d.'
+            exit 1
+          fi
+
       - name: Build debug and release APKs
         run: ./gradlew android:assembleDebug android:assembleRelease --stacktrace
 
