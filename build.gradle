@@ -15,8 +15,8 @@ allprojects {
         appPackageName = 'com.thistleclaw.shatteredpd.adventure'
 
         //Adventure Mode uses its own package/version line, separate from upstream.
-        appVersionCode = 913
-        appVersionName = '4.0.0-adventure1'
+        appVersionCode = 914
+        appVersionName = '4.0.0-adventure2'
 
         appJavaCompatibility = JavaVersion.VERSION_11
 
