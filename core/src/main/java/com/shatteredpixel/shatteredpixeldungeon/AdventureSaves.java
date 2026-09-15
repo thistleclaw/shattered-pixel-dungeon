@@ -30,6 +30,7 @@ public final class AdventureSaves {
 
     private static final String ROOT = "adventure_saves";
     private static final String GAME_FILE = "game.dat";
+    private static final String META_SUFFIX = ".meta";
     private static final String TMP_SUFFIX = ".adventure_tmp";
     private static final String BACKUP_SUFFIX = ".adventure_backup";
 
@@ -41,6 +42,10 @@ public final class AdventureSaves {
 
     private static String checkpointPath(int slot, String id) {
         return slotRoot(slot) + "/" + id;
+    }
+
+    private static String checkpointMetaPath(int slot, String id) {
+        return slotRoot(slot) + "/" + id + META_SUFFIX;
     }
 
     private static String manualId(int index) {
@@ -104,7 +109,7 @@ public final class AdventureSaves {
                 && old.seed == Dungeon.seed
                 && old.depth == Dungeon.depth
                 && old.branch == Dungeon.branch
-                && checkpointHasCurrentDepthFile(slot, AUTO, old)) {
+                && checkpointHasRequiredFiles(slot, AUTO, old)) {
             return; //already have the entry checkpoint for this floor/branch
         }
 
@@ -124,7 +129,10 @@ public final class AdventureSaves {
             //Make sure the snapshot contains the exact current turn.
             Dungeon.saveAll();
             copyCurrentGameTo(GamesInProgress.curSlot, manualId(index));
-            return true;
+
+            //Never tell the player a save succeeded unless it can immediately
+            //be discovered and contains both game.dat and the current level.
+            return checkpointExistsForCurrentRun(manualId(index));
         } catch (IOException e) {
             ShatteredPixelDungeon.reportException(e);
             return false;
@@ -178,27 +186,65 @@ public final class AdventureSaves {
         int slot = GamesInProgress.curSlot;
         Meta meta = readMeta(slot, id);
         if (meta == null || meta.seed != Dungeon.seed) return null;
-        if (!checkpointHasCurrentDepthFile(slot, id, meta)) return null;
+        if (!checkpointHasRequiredFiles(slot, id, meta)) return null;
         return meta;
     }
 
-    private static boolean checkpointHasCurrentDepthFile(int slot, String id, Meta meta) {
+    private static boolean checkpointHasRequiredFiles(int slot, String id, Meta meta) {
+        String base = checkpointPath(slot, id);
+        if (!FileUtils.fileExists(base + "/" + GAME_FILE)) return false;
+
         String depthFile;
         if (meta.branch == 0) {
             depthFile = "depth" + meta.depth + ".dat";
         } else {
             depthFile = "depth" + meta.depth + "-branch" + meta.branch + ".dat";
         }
-        return FileUtils.fileExists(checkpointPath(slot, id) + "/" + depthFile);
+        return FileUtils.fileExists(base + "/" + depthFile);
     }
 
     private static void copyCurrentGameTo(int slot, String id) throws IOException {
         FileHandle source = FileUtils.getFileHandle(GamesInProgress.gameFolder(slot));
         FileHandle target = FileUtils.getFileHandle(checkpointPath(slot, id));
         replaceDirectorySafely(source, target);
+
+        //Keep checkpoint metadata OUTSIDE the copied game directory. This makes
+        //the UI/validation independent of reparsing a copied Shattered game.dat
+        //and avoids leaking Adventure metadata back into gameN/ on restore.
+        writeMeta(slot, id, Dungeon.seed, Dungeon.depth, Dungeon.branch);
+    }
+
+    private static void writeMeta(int slot, String id, long seed, int depth, int branch) throws IOException {
+        try {
+            FileHandle file = FileUtils.getFileHandle(checkpointMetaPath(slot, id));
+            FileHandle parent = file.parent();
+            if (!parent.exists()) parent.mkdirs();
+            file.writeString(seed + "\n" + depth + "\n" + branch + "\n", false, "UTF-8");
+        } catch (RuntimeException e) {
+            throw new IOException(e);
+        }
     }
 
     private static Meta readMeta(int slot, String id) {
+        //Adventure2+ metadata: simple sidecar text file. It is deliberately
+        //boring so it behaves consistently even on Android 4.4's old org.json.
+        FileHandle sidecar = FileUtils.getFileHandle(checkpointMetaPath(slot, id));
+        if (sidecar.exists() && !sidecar.isDirectory() && sidecar.length() > 0) {
+            try {
+                String[] lines = sidecar.readString("UTF-8").trim().split("\\n");
+                if (lines.length >= 3) {
+                    Meta result = new Meta();
+                    result.seed = Long.parseLong(lines[0].trim());
+                    result.depth = Integer.parseInt(lines[1].trim());
+                    result.branch = Integer.parseInt(lines[2].trim());
+                    return result;
+                }
+            } catch (Exception ignored) {
+                //Fall through to game.dat for compatibility with older checkpoints.
+            }
+        }
+
+        //Compatibility fallback for checkpoints made by early Adventure builds.
         String file = checkpointPath(slot, id) + "/" + GAME_FILE;
         if (!FileUtils.fileExists(file)) return null;
 
