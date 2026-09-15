@@ -234,6 +234,7 @@ public class GamesInProgress {
 			} else {
 				return lastPlayedComparator.compare(lhs, rhs);
 			}
+		}
 	};
 
 	public static final Comparator<GamesInProgress.Info> lastPlayedComparator = new Comparator<GamesInProgress.Info>() {
