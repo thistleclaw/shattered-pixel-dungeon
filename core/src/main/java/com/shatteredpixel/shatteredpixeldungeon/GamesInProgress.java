@@ -136,6 +136,10 @@ public class GamesInProgress {
 	}
 
 	public static void set(int slot) {
+		//A new game is started from a slot that was previously checked as empty.
+		//Clear rollback data from an older run before this slot is reused.
+		boolean newRun = slotStates.containsKey(slot) && slotStates.get(slot) == null;
+
 		Info info = new Info();
 		info.slot = slot;
 
@@ -163,7 +167,12 @@ public class GamesInProgress {
 		info.goldCollected = Statistics.goldCollected;
 		info.maxDepth = Statistics.deepestFloor;
 
+		if (newRun) AdventureSaves.clearForNewRun(slot);
 		slotStates.put( slot, info );
+
+		//The first completed normal save on each floor/branch becomes the entry
+		//checkpoint. Repeated saves on the same floor deliberately leave it alone.
+		AdventureSaves.maybeAutoSave(slot);
 	}
 	
 	public static void setUnknown( int slot ) {
@@ -171,7 +180,22 @@ public class GamesInProgress {
 	}
 	
 	public static void delete( int slot ) {
+		//Final death normally invalidates gameN/. If Adventure Mode has a valid
+		//checkpoint, immediately restore the best one so recovery survives even
+		//if the app is killed while the game-over screen is open.
+		boolean finalDeath = slot == curSlot
+				&& Dungeon.hero != null
+				&& !Dungeon.hero.isAlive()
+				&& AdventureSaves.anyCheckpointExists();
+
 		slotStates.put( slot, null );
+
+		if (finalDeath) {
+			AdventureSaves.restoreBestAvailable();
+		} else {
+			//Victory or an explicit erase really ends this run, including rollback data.
+			AdventureSaves.clearForNewRun(slot);
+		}
 	}
 	
 	public static class Info {
@@ -210,7 +234,6 @@ public class GamesInProgress {
 			} else {
 				return lastPlayedComparator.compare(lhs, rhs);
 			}
-		}
 	};
 
 	public static final Comparator<GamesInProgress.Info> lastPlayedComparator = new Comparator<GamesInProgress.Info>() {
