@@ -14,8 +14,8 @@ allprojects {
         appName = 'Shattered Pixel Dungeon: Adventure'
         appPackageName = 'com.thistleclaw.shatteredpd.adventure'
 
-        appVersionCode = 866
-        appVersionName = '3.2.1-adventure6'
+        appVersionCode = 867
+        appVersionName = '3.2.1-adventure7'
 
         appJavaCompatibility = JavaVersion.VERSION_1_8
 
