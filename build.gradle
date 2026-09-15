@@ -11,18 +11,18 @@ buildscript {
 allprojects {
 
     ext {
-        appName = 'Shattered Pixel Dungeon'
-        appPackageName = 'com.shatteredpixel.shatteredpixeldungeon'
+        appName = 'Shattered Pixel Dungeon: Adventure'
+        appPackageName = 'com.thistleclaw.shatteredpd.adventure'
 
-        //Full releases gets +2 on version code, needed for an F-Droid quirk
-        appVersionCode = 912
-        appVersionName = '4.0.0'
+        //Adventure Mode uses its own package/version line, separate from upstream.
+        appVersionCode = 913
+        appVersionName = '4.0.0-adventure1'
 
         appJavaCompatibility = JavaVersion.VERSION_11
 
-        appAndroidCompileSDK = 36   //Android 15
+        appAndroidCompileSDK = 36   //Android 16
         appAndroidMinSDK = 21       //Android 5.0
-        appAndroidTargetSDK = 36    //Android 15
+        appAndroidTargetSDK = 36    //Android 16
 
         gdxVersion = '1.14.0'
         gdxControllersVersion = '2.2.4'
