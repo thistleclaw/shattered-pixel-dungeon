@@ -61,6 +61,15 @@ public class WndGame extends Window {
 		});
 		curBtn.icon(Icons.get(Icons.PREFS));
 
+		//Adventure Mode save/load menu
+		addButton( curBtn = new RedButton( "Сохранения" ) {
+			@Override
+			protected void onClick() {
+				hide();
+				GameScene.show(new WndAdventureSaves());
+			}
+		});
+
 		// Challenges window
 		if (Dungeon.challenges > 0) {
 			addButton( curBtn = new RedButton( Messages.get(this, "challenges") ) {
