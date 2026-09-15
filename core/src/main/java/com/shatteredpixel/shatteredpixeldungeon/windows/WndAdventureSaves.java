@@ -15,6 +15,7 @@ import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.ShatteredPixelDungeon;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.InterlevelScene;
+import com.shatteredpixel.shatteredpixeldungeon.ui.ActionIndicator;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 
 public class WndAdventureSaves extends WndOptions {
@@ -103,10 +104,10 @@ public class WndAdventureSaves extends WndOptions {
     }
 
     private static void continueFromCheckpoint() {
-        //Drop references to the dead/current in-memory run. InterlevelScene will
-        //load the restored game directory exactly like a normal Continue action.
+        //Mirror the game's normal Continue path: drop the in-memory hero and
+        //let InterlevelScene rebuild the run from the restored save directory.
         Dungeon.hero = null;
-        Dungeon.level = null;
+        ActionIndicator.clearAction();
         InterlevelScene.mode = InterlevelScene.Mode.CONTINUE;
         ShatteredPixelDungeon.switchScene(InterlevelScene.class);
     }
