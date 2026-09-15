@@ -237,6 +237,7 @@ public class GamesInProgress {
 				return (int)Math.signum( rhs.level - lhs.level );
 			} else {
 				return lastPlayedComparator.compare(lhs, rhs);
+			}
 		}
 	};
 
