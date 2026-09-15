@@ -1,36 +1,45 @@
-# Shattered Pixel Dungeon — Adventure Mode
+# Shattered Pixel Dungeon: Adventure — Legacy
 
-This branch is based on **v3.2.1**, the last Shattered Pixel Dungeon release that supports Android 4.0–4.4.
+This branch is the **Android 4.x edition** of Adventure Mode. It is based on **Shattered Pixel Dungeon 3.2.1**, the last upstream line used by this fork that runs on Android 4.0–4.4.
 
-## What changed
+For the current Shattered Pixel Dungeon 4.0.0 edition, use the [`adventure-v4`](https://github.com/thistleclaw/shattered-pixel-dungeon/tree/adventure-v4) branch.
 
-- Separate Android application ID: `com.thistleclaw.shatteredpd.adventure`
-- User-visible name: **Shattered Pixel Dungeon Adventure**
-- Automatic rollback checkpoint on the first normal save of every floor/branch
-- Three manual save slots
-- Save/load menu available from the in-game menu, including after a normal permadeath
-- Checkpoints are stored outside `gameN/`, so Shattered's normal death cleanup does not delete them
+## Adventure save system
 
-The auto checkpoint is intentionally not overwritten by ordinary saves on the same floor. Moving to a different floor or quest branch creates a new auto checkpoint.
+- **Autosave** — one rollback checkpoint created on the first completed normal save after entering each floor or quest branch.
+- **Manual 1–3** — three manual slots that preserve the exact current turn.
+- **Recovery after death** — a valid Adventure checkpoint is kept recoverable after normal permadeath.
+- **Separate storage** — checkpoints live outside `gameN/`, so Shattered's normal run cleanup does not destroy them.
+- **Safe replacement** — checkpoint folders are copied through temporary/backup directories. The implementation deliberately avoids libGDX `FileHandle.moveTo()` on Android local storage because its directory fallback can nest the source folder inside the destination.
 
-## Build Android debug APK
+The ordinary dungeon generation, enemies, loot, hunger, bosses and combat balance are unchanged. Adventure Mode only adds rollback saves.
 
-Requires JDK 17.
+## Android identity
+
+- App name: **Shattered Pixel Dungeon Adventure**
+- Application ID: `com.thistleclaw.shatteredpd.adventure`
+- Current legacy version: `3.2.1-adventure5`
+- Minimum Android: **4.0 / API 14**
+
+Debug builds add the usual `.indev` suffix to the application ID.
+
+## Builds
+
+The `Adventure legacy Android build` workflow produces:
+
+- `shattered-pd-adventure-legacy-debug` — installable development APK.
+- `shattered-pd-adventure-legacy-release-unsigned` — optimized release variant which still needs a persistent Android signing key before public distribution.
+
+Local build:
 
 ```bash
 git clone -b adventure-saves https://github.com/thistleclaw/shattered-pixel-dungeon.git
 cd shattered-pixel-dungeon
-./gradlew android:assembleDebug
+./gradlew android:assembleDebug android:assembleRelease
 ```
 
-APK output:
+## Upstream and license
 
-```text
-android/build/outputs/apk/debug/
-```
+Shattered Pixel Dungeon is created by Evan Debenham and is based on Pixel Dungeon by Watabou. Adventure Mode is an unofficial downstream modification.
 
-The debug build has an `.indev` application-ID suffix, so it can be installed separately from both official Shattered Pixel Dungeon and a future release build of this fork.
-
-## Notes
-
-This is an Adventure Mode fork rather than an attempt to preserve traditional roguelike permadeath. The normal dungeon generation, enemies, loot, hunger, bosses and combat balance are unchanged; only rollback saves are added.
+The code remains licensed under **GPL-3.0-or-later**. See [`LICENSE`](LICENSE).
