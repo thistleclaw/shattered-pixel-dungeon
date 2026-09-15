@@ -61,14 +61,17 @@ public class WndGame extends Window {
 		});
 		curBtn.icon(Icons.get(Icons.PREFS));
 
-		//Adventure Mode save/load menu
-		addButton( curBtn = new RedButton( "Сохранения" ) {
+		//Adventure Mode save/load menu. After death make the recovery action
+		//explicit instead of hiding it behind a generic "Saves" label.
+		boolean dead = Dungeon.hero != null && !Dungeon.hero.isAlive();
+		addButton( curBtn = new RedButton( dead ? "Загрузить сохранение" : "Сохранения" ) {
 			@Override
 			protected void onClick() {
 				hide();
 				GameScene.show(new WndAdventureSaves());
 			}
 		});
+		curBtn.icon(Icons.get(Icons.COPY));
 
 		// Challenges window
 		if (Dungeon.challenges > 0) {
