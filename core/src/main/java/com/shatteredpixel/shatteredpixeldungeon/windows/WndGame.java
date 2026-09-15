@@ -25,6 +25,7 @@ import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.GamesInProgress;
 import com.shatteredpixel.shatteredpixeldungeon.SPDSettings;
 import com.shatteredpixel.shatteredpixeldungeon.ShatteredPixelDungeon;
+import com.shatteredpixel.shatteredpixeldungeon.messages.AdventureMessages;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.HeroSelectScene;
@@ -64,7 +65,7 @@ public class WndGame extends Window {
 		//Adventure Mode save/load menu. After death make the recovery action
 		//explicit instead of hiding it behind a generic "Saves" label.
 		boolean dead = Dungeon.hero != null && !Dungeon.hero.isAlive();
-		addButton( curBtn = new RedButton( dead ? "Загрузить сохранение" : "Сохранения" ) {
+		addButton( curBtn = new RedButton( AdventureMessages.get(dead ? "menu_load" : "menu_saves") ) {
 			@Override
 			protected void onClick() {
 				hide();
@@ -132,7 +133,7 @@ public class WndGame extends Window {
 		btn.setRect( 0, pos > 0 ? pos += GAP : 0, WIDTH, BTN_HEIGHT );
 		pos += BTN_HEIGHT;
 	}
-
+	
 	private void addButtons( RedButton btn1, RedButton btn2 ) {
 		add( btn1 );
 		btn1.setRect( 0, pos > 0 ? pos += GAP : 0, (WIDTH - GAP) / 2, BTN_HEIGHT );
