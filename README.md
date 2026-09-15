@@ -1,27 +1,26 @@
-# Shattered Pixel Dungeon
+# Shattered Pixel Dungeon: Adventure — Legacy
 
-[Shattered Pixel Dungeon](https://shatteredpixel.com/shatteredpd/) is an open-source traditional roguelike dungeon crawler with randomized levels and enemies, and hundreds of items to collect and use. It's based on the [source code of Pixel Dungeon](https://github.com/00-Evan/pixel-dungeon-gradle), by [Watabou](https://watabou.itch.io/).
+The **Android 4.x edition** of an unofficial Shattered Pixel Dungeon fork with rollback saves.
 
-Shattered Pixel Dungeon currently compiles for Android, iOS, and Desktop platforms. You can find official releases of the game on:
+This branch is based on **Shattered Pixel Dungeon 3.2.1** and is kept for old devices that cannot run modern Shattered releases. It adds one automatic floor-entry checkpoint, three manual exact-turn save slots, and recovery from checkpoints after death.
 
-[![Get it on Google Play](https://shatteredpixel.com/assets/images/badges/gplay.png)](https://play.google.com/store/apps/details?id=com.shatteredpixel.shatteredpixeldungeon)
-[![Download on the App Store](https://shatteredpixel.com/assets/images/badges/appstore.png)](https://apps.apple.com/app/shattered-pixel-dungeon/id1563121109)
-[![Steam](https://shatteredpixel.com/assets/images/badges/steam.png)](https://store.steampowered.com/app/1769170/Shattered_Pixel_Dungeon/)<br>
-[![GOG.com](https://shatteredpixel.com/assets/images/badges/gog.png)](https://www.gog.com/game/shattered_pixel_dungeon)
-[![Itch.io](https://shatteredpixel.com/assets/images/badges/itch.png)](https://shattered-pixel.itch.io/shattered-pixel-dungeon)
-[![Github Releases](https://shatteredpixel.com/assets/images/badges/github.png)](https://github.com/00-Evan/shattered-pixel-dungeon/releases)
+## Editions
 
-If you like this game, please consider [supporting me on Patreon](https://www.patreon.com/ShatteredPixel)!
+| Branch | Based on | Android support |
+| --- | --- | --- |
+| [`adventure-v4`](https://github.com/thistleclaw/shattered-pixel-dungeon/tree/adventure-v4) | Shattered Pixel Dungeon 4.0.0 | Android 5.0+ |
+| [`adventure-saves`](https://github.com/thistleclaw/shattered-pixel-dungeon/tree/adventure-saves) | Shattered Pixel Dungeon 3.2.1 | Android 4.0+, including Android 4.4 |
 
-There is an official blog for this project at [ShatteredPixel.com](https://www.shatteredpixel.com/blog/).
+This branch is the second row: the legacy compatibility build.
 
-The game also has a translation project hosted on [Transifex](https://explore.transifex.com/shattered-pixel/shattered-pixel-dungeon/).
+See **[ADVENTURE_MODE.md](ADVENTURE_MODE.md)** for save behavior, build details and compatibility notes.
 
-Note that **this repository does not accept pull requests!** The code here is provided in hopes that others may find it useful for their own projects, not to allow community contribution. Issue reports of all kinds (bug reports, feature requests, etc.) are welcome.
+## Upstream
 
-If you'd like to work with the code, you can find the following guides in `/docs`:
-- [Compiling for Android.](docs/getting-started-android.md)
-    - **[If you plan to distribute on Google Play please read the end of this guide.](docs/getting-started-android.md#distributing-your-apk)**
-- [Compiling for desktop platforms.](docs/getting-started-desktop.md)
-- [Compiling for iOS.](docs/getting-started-ios.md)
-- [Recommended changes for making your own version.](docs/recommended-changes.md)
+Adventure Mode is based on [Shattered Pixel Dungeon](https://github.com/00-Evan/shattered-pixel-dungeon), created by Evan Debenham, which itself is based on Pixel Dungeon by Watabou.
+
+This fork is **not an official Shattered Pixel Dungeon release**.
+
+## License
+
+The project remains licensed under **GPL-3.0-or-later**. See [LICENSE](LICENSE).
