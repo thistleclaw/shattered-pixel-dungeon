@@ -163,6 +163,11 @@ public class GamesInProgress {
 		info.maxDepth = Statistics.deepestFloor;
 
 		slotStates.put( slot, info );
+
+		//Adventure Mode: the first normal save made on a new floor becomes
+		//that floor's rollback checkpoint. Existing checkpoints on the same
+		//floor are deliberately left untouched.
+		AdventureSaves.maybeAutoSave(slot);
 	}
 	
 	public static void setUnknown( int slot ) {
