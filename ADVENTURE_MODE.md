@@ -16,12 +16,16 @@ The ordinary dungeon generation, enemies, loot, hunger, bosses and combat balanc
 
 ## Android identity
 
-- App name: **Shattered Pixel Dungeon Adventure**
+- App name: **Shattered Pixel Dungeon: Adventure**
 - Application ID: `com.thistleclaw.shatteredpd.adventure`
-- Current legacy version: `3.2.1-adventure5`
+- Current legacy version: `3.2.1-adventure6`
 - Minimum Android: **4.0 / API 14**
 
 Debug builds add the usual `.indev` suffix to the application ID.
+
+## Localization
+
+Adventure Mode UI additions ship in English and Russian. Other game languages fall back to the English Adventure strings.
 
 ## Builds
 
@@ -38,8 +42,10 @@ cd shattered-pixel-dungeon
 ./gradlew android:assembleDebug android:assembleRelease
 ```
 
+See [`docs/adventure-release-signing.md`](docs/adventure-release-signing.md) for release signing.
+
 ## Upstream and license
 
 Shattered Pixel Dungeon is created by Evan Debenham and is based on Pixel Dungeon by Watabou. Adventure Mode is an unofficial downstream modification.
 
-The code remains licensed under **GPL-3.0-or-later**. See [`LICENSE`](LICENSE).
+The code remains licensed under **GPL-3.0-or-later**. See [`LICENSE.txt`](LICENSE.txt).
