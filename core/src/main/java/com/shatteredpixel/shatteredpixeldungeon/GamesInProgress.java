@@ -135,6 +135,11 @@ public class GamesInProgress {
 	}
 
 	public static void set(int slot) {
+		//A new game is always started from a slot that was previously checked as
+		//empty. Use that to prevent checkpoints from an older run in the same
+		//slot leaking into this one (important for reused custom/daily seeds).
+		boolean newRun = slotStates.containsKey(slot) && slotStates.get(slot) == null;
+
 		Info info = new Info();
 		info.slot = slot;
 
@@ -162,6 +167,7 @@ public class GamesInProgress {
 		info.goldCollected = Statistics.goldCollected;
 		info.maxDepth = Statistics.deepestFloor;
 
+		if (newRun) AdventureSaves.clearForNewRun(slot);
 		slotStates.put( slot, info );
 
 		//Adventure Mode: the first normal save made on a new floor becomes
