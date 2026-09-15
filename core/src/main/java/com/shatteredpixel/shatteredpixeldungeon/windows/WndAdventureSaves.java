@@ -13,6 +13,7 @@ package com.shatteredpixel.shatteredpixeldungeon.windows;
 import com.shatteredpixel.shatteredpixeldungeon.AdventureSaves;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.ShatteredPixelDungeon;
+import com.shatteredpixel.shatteredpixeldungeon.messages.AdventureMessages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.InterlevelScene;
 import com.shatteredpixel.shatteredpixeldungeon.ui.ActionIndicator;
@@ -22,8 +23,8 @@ public class WndAdventureSaves extends WndOptions {
 
     public WndAdventureSaves() {
         super(
-                "Сохранения",
-                "Хранится один последний автосейв — момент входа на текущий этаж. Ручные слоты сохраняют точный текущий ход.",
+                msg("title"),
+                msg("description"),
                 autoLabel(),
                 manualLabel(1),
                 manualLabel(2),
@@ -31,23 +32,27 @@ public class WndAdventureSaves extends WndOptions {
         );
     }
 
+    private static String msg(String key, Object... args) {
+        return AdventureMessages.get(key, args);
+    }
+
     private static String location(int depth, int branch) {
-        if (depth <= 0) return "пусто";
-        if (branch == 0) return "этаж " + depth;
-        if (branch == 1) return "этаж " + depth + " · шахта";
-        return "этаж " + depth + " · ветка " + branch;
+        if (depth <= 0) return "";
+        if (branch == 0) return msg("location_floor", depth);
+        if (branch == 1) return msg("location_mine", depth);
+        return msg("location_branch", depth, branch);
     }
 
     private static String autoLabel() {
         int depth = AdventureSaves.checkpointDepth(AdventureSaves.AUTO);
         int branch = AdventureSaves.checkpointBranch(AdventureSaves.AUTO);
-        return depth > 0 ? "Автосейв — " + location(depth, branch) : "Автосейв (пусто)";
+        return depth > 0 ? msg("auto_label", location(depth, branch)) : msg("auto_empty");
     }
 
     private static String manualLabel(int slot) {
         int depth = AdventureSaves.manualDepth(slot);
         int branch = AdventureSaves.manualBranch(slot);
-        return depth > 0 ? "Ручной " + slot + " — " + location(depth, branch) : "Ручной " + slot + " (пусто)";
+        return depth > 0 ? msg("manual_label", slot, location(depth, branch)) : msg("manual_empty", slot);
     }
 
     private static boolean heroAlive() {
@@ -74,8 +79,6 @@ public class WndAdventureSaves extends WndOptions {
             if (heroAlive()) {
                 showManualSlot(slot);
             } else {
-                //After death saving is impossible, so one tap on a populated
-                //manual slot should simply restore it.
                 loadManual(slot);
             }
         }
@@ -87,10 +90,10 @@ public class WndAdventureSaves extends WndOptions {
         final int branch = AdventureSaves.manualBranch(slot);
 
         GameScene.show(new WndOptions(
-                "Ручной слот " + slot,
-                exists ? "Сохранено: " + location(depth, branch) + "." : "Этот слот пока пуст.",
-                exists ? "Перезаписать" : "Сохранить сюда",
-                "Загрузить"
+                msg("slot_title", slot),
+                exists ? msg("slot_saved", location(depth, branch)) : msg("slot_empty"),
+                exists ? msg("overwrite") : msg("save_here"),
+                msg("load")
         ) {
             @Override
             protected boolean enabled(int index) {
@@ -114,10 +117,10 @@ public class WndAdventureSaves extends WndOptions {
 
     private void confirmOverwrite(final int slot) {
         GameScene.show(new WndOptions(
-                "Перезаписать слот " + slot + "?",
-                "Старое ручное сохранение будет заменено текущим состоянием игры.",
-                "Перезаписать",
-                "Отмена"
+                msg("overwrite_title", slot),
+                msg("overwrite_body"),
+                msg("overwrite"),
+                msg("cancel")
         ) {
             @Override
             protected void onSelect(int index) {
@@ -130,10 +133,10 @@ public class WndAdventureSaves extends WndOptions {
         int depth = AdventureSaves.checkpointDepth(AdventureSaves.AUTO);
         int branch = AdventureSaves.checkpointBranch(AdventureSaves.AUTO);
         GameScene.show(new WndOptions(
-                "Загрузить автосейв?",
-                "Откатиться к моменту входа: " + location(depth, branch) + "? Текущий прогресс после него будет потерян.",
-                "Загрузить",
-                "Отмена"
+                msg("load_auto_title"),
+                msg("load_auto_body", location(depth, branch)),
+                msg("load"),
+                msg("cancel")
         ) {
             @Override
             protected void onSelect(int index) {
@@ -146,10 +149,10 @@ public class WndAdventureSaves extends WndOptions {
         int depth = AdventureSaves.manualDepth(slot);
         int branch = AdventureSaves.manualBranch(slot);
         GameScene.show(new WndOptions(
-                "Загрузить ручной слот " + slot + "?",
-                "Откатиться к сохранению: " + location(depth, branch) + "? Текущий прогресс после него будет потерян.",
-                "Загрузить",
-                "Отмена"
+                msg("load_manual_title", slot),
+                msg("load_manual_body", location(depth, branch)),
+                msg("load"),
+                msg("cancel")
         ) {
             @Override
             protected void onSelect(int index) {
@@ -160,14 +163,13 @@ public class WndAdventureSaves extends WndOptions {
 
     private void saveManualAndRefresh(int slot) {
         if (AdventureSaves.saveManual(slot)) {
-            GLog.p("Игра сохранена в ручной слот " + slot + ".");
-            //WndOptions builds labels/enabled state only once in its constructor.
-            //Recreate this window so a newly written slot is immediately visible
-            //instead of still looking empty until the menu is closed and reopened.
+            GLog.p(msg("saved", slot));
+            // WndOptions snapshots labels/enabled state in its constructor, so
+            // rebuild it after a write to show the new slot immediately.
             hide();
             GameScene.show(new WndAdventureSaves());
         } else {
-            GLog.w("Не удалось сохранить игру.");
+            GLog.w(msg("save_failed"));
         }
     }
 
@@ -175,7 +177,7 @@ public class WndAdventureSaves extends WndOptions {
         if (AdventureSaves.restoreAuto()) {
             continueFromCheckpoint();
         } else {
-            GLog.w("Автосейв недоступен или повреждён.");
+            GLog.w(msg("auto_failed"));
         }
     }
 
@@ -183,13 +185,13 @@ public class WndAdventureSaves extends WndOptions {
         if (AdventureSaves.restoreManual(slot)) {
             continueFromCheckpoint();
         } else {
-            GLog.w("Это сохранение недоступно или повреждено.");
+            GLog.w(msg("manual_failed"));
         }
     }
 
     private static void continueFromCheckpoint() {
-        //Mirror the game's normal Continue path: drop the in-memory hero and
-        //let InterlevelScene rebuild the run from the restored save directory.
+        // Follow the normal Continue path: throw away the in-memory hero and let
+        // InterlevelScene reconstruct the run from the restored save directory.
         Dungeon.hero = null;
         ActionIndicator.clearAction();
         InterlevelScene.mode = InterlevelScene.Mode.CONTINUE;
