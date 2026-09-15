@@ -96,6 +96,7 @@ public class GitHubUpdates extends UpdateService {
 								if (minIOS.find() && DeviceCompat.getPlatformVersion() < Integer.parseInt(minIOS.group(1))){
 									continue;
 								}
+							}
 
 							latestRelease = b;
 							latestVersionCode = releaseVersion;
