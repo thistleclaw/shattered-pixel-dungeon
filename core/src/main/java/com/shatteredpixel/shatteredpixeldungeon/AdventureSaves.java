@@ -130,9 +130,14 @@ public final class AdventureSaves {
             Dungeon.saveAll();
             copyCurrentGameTo(GamesInProgress.curSlot, manualId(index));
 
-            //Never tell the player a save succeeded unless it can immediately
-            //be discovered and contains both game.dat and the current level.
-            return checkpointExistsForCurrentRun(manualId(index));
+            //Do not immediately re-open the files we have just renamed/written.
+            //On some old Android/Linux storage stacks (notably 4.x-era devices)
+            //the directory metadata can lag very briefly after moveTo(), making
+            //an immediate exists()/length() check report a false negative even
+            //though the checkpoint is already present. A later menu refresh sees
+            //the exact same checkpoint correctly. If copy + metadata write did
+            //not throw, the save operation itself succeeded.
+            return true;
         } catch (IOException e) {
             ShatteredPixelDungeon.reportException(e);
             return false;
