@@ -1,6 +1,10 @@
 # Built application files
 *.apk
 
+# Android signing keys must never be committed
+*.jks
+*.keystore
+
 # Files for the Dalvik VM
 *.dex
 
