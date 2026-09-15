@@ -16,13 +16,7 @@ import com.watabou.utils.FileUtils;
 
 import java.io.IOException;
 
-/**
- * Checkpoint support for the Adventure Mode fork.
- *
- * Shattered already serializes a complete run into gameN/. AdventureSaves
- * snapshots that directory outside the normal run folder, so regular death
- * cleanup cannot destroy the checkpoints.
- */
+/** Checkpoint support for the Adventure Mode fork. */
 public final class AdventureSaves {
 
     public static final String AUTO = "auto";
@@ -52,11 +46,6 @@ public final class AdventureSaves {
         return "manual" + index;
     }
 
-    /**
-     * Called when a save slot starts a genuinely new run. Manual/auto saves are
-     * intentionally per-run, so old checkpoints from a previous run in the same
-     * slot must not leak into a new game (especially with reused custom seeds).
-     */
     public static void clearForNewRun(int slot) {
         FileUtils.deleteDir(slotRoot(slot));
     }
@@ -110,7 +99,7 @@ public final class AdventureSaves {
                 && old.depth == Dungeon.depth
                 && old.branch == Dungeon.branch
                 && checkpointHasRequiredFiles(slot, AUTO, old)) {
-            return; //already have the entry checkpoint for this floor/branch
+            return;
         }
 
         try {
@@ -126,18 +115,9 @@ public final class AdventureSaves {
         }
 
         try {
-            //Make sure the snapshot contains the exact current turn.
             Dungeon.saveAll();
             copyCurrentGameTo(GamesInProgress.curSlot, manualId(index));
-
-            //Do not immediately re-open the files we have just renamed/written.
-            //On some old Android/Linux storage stacks (notably 4.x-era devices)
-            //the directory metadata can lag very briefly after moveTo(), making
-            //an immediate exists()/length() check report a false negative even
-            //though the checkpoint is already present. A later menu refresh sees
-            //the exact same checkpoint correctly. If copy + metadata write did
-            //not throw, the save operation itself succeeded.
-            return true;
+            return checkpointExistsForCurrentRun(manualId(index));
         } catch (IOException e) {
             ShatteredPixelDungeon.reportException(e);
             return false;
@@ -153,11 +133,6 @@ public final class AdventureSaves {
         return restore(manualId(index));
     }
 
-    /**
-     * Used after final death, when Shattered has already invalidated gameN/.
-     * Prefer the floor-entry autosave, but if it is unavailable keep the run
-     * recoverable from the first valid manual slot instead of deleting it.
-     */
     public static boolean restoreBestAvailable() {
         if (restore(AUTO)) return true;
         for (int i = 1; i <= MANUAL_SLOTS; i++) {
@@ -212,18 +187,12 @@ public final class AdventureSaves {
         FileHandle source = FileUtils.getFileHandle(GamesInProgress.gameFolder(slot));
         FileHandle target = FileUtils.getFileHandle(checkpointPath(slot, id));
         replaceDirectorySafely(source, target);
-
-        //Keep checkpoint metadata OUTSIDE the copied game directory. This makes
-        //the UI/validation independent of reparsing a copied Shattered game.dat
-        //and avoids leaking Adventure metadata back into gameN/ on restore.
         writeMeta(slot, id, Dungeon.seed, Dungeon.depth, Dungeon.branch);
     }
 
     private static void writeMeta(int slot, String id, long seed, int depth, int branch) throws IOException {
         try {
             FileHandle file = FileUtils.getFileHandle(checkpointMetaPath(slot, id));
-            FileHandle parent = file.parent();
-            if (!parent.exists()) parent.mkdirs();
             file.writeString(seed + "\n" + depth + "\n" + branch + "\n", false, "UTF-8");
         } catch (RuntimeException e) {
             throw new IOException(e);
@@ -231,8 +200,6 @@ public final class AdventureSaves {
     }
 
     private static Meta readMeta(int slot, String id) {
-        //Adventure2+ metadata: simple sidecar text file. It is deliberately
-        //boring so it behaves consistently even on Android 4.4's old org.json.
         FileHandle sidecar = FileUtils.getFileHandle(checkpointMetaPath(slot, id));
         if (sidecar.exists() && !sidecar.isDirectory() && sidecar.length() > 0) {
             try {
@@ -245,11 +212,10 @@ public final class AdventureSaves {
                     return result;
                 }
             } catch (Exception ignored) {
-                //Fall through to game.dat for compatibility with older checkpoints.
+                // Fall through to game.dat for compatibility with older checkpoints.
             }
         }
 
-        //Compatibility fallback for checkpoints made by early Adventure builds.
         String file = checkpointPath(slot, id) + "/" + GAME_FILE;
         if (!FileUtils.fileExists(file)) return null;
 
@@ -266,51 +232,99 @@ public final class AdventureSaves {
     }
 
     /**
-     * Replaces a directory without deleting the previous copy until the new
-     * copy has been written completely. This matters on older devices and also
-     * protects a manual checkpoint from a failed overwrite.
+     * Safely replaces a directory without FileHandle.moveTo().
+     *
+     * libGDX's moveTo() falls back to copyTo() for FileType.Local. For a directory,
+     * copyTo() copies the source directory itself below the destination, which adds
+     * an unwanted extra path component. Shattered uses FileType.Local on Android,
+     * so checkpoints such as manual1 ended up as manual1/manual1.adventure_tmp/... .
      */
     private static void replaceDirectorySafely(FileHandle source, FileHandle target) throws IOException {
         if (source == null || !source.exists() || !source.isDirectory()) {
-            throw new IOException("checkpoint directory does not exist");
+            throw new IOException("checkpoint directory does not exist: " + source);
         }
 
         FileHandle parent = target.parent();
         FileHandle temp = parent.child(target.name() + TMP_SUFFIX);
         FileHandle backup = parent.child(target.name() + BACKUP_SUFFIX);
+        boolean hadTarget = target.exists();
+        boolean backupReady = false;
 
         try {
-            if (temp.exists()) temp.deleteDirectory();
+            deleteRequired(temp);
             temp.mkdirs();
+            if (!temp.exists() || !temp.isDirectory()) {
+                throw new IOException("cannot create temp checkpoint directory: " + temp);
+            }
             copyChildren(source, temp);
-
-            if (backup.exists()) backup.deleteDirectory();
-            if (target.exists()) target.moveTo(backup);
-
-            try {
-                temp.moveTo(target);
-            } catch (RuntimeException moveError) {
-                if (target.exists()) target.deleteDirectory();
-                if (backup.exists()) backup.moveTo(target);
-                throw moveError;
+            if (!temp.child(GAME_FILE).exists()) {
+                throw new IOException("temp checkpoint is missing " + GAME_FILE);
             }
 
-            if (backup.exists()) backup.deleteDirectory();
-
-        } catch (RuntimeException e) {
-            //Best-effort rollback. Never intentionally delete the only good copy.
-            try {
-                if (!target.exists() && backup.exists()) backup.moveTo(target);
-            } catch (RuntimeException ignored) {
-                //The original exception is more useful to report.
+            deleteRequired(backup);
+            if (hadTarget) {
+                backup.mkdirs();
+                if (!backup.exists() || !backup.isDirectory()) {
+                    throw new IOException("cannot create checkpoint backup: " + backup);
+                }
+                copyChildren(target, backup);
+                backupReady = true;
             }
+
+            deleteRequired(target);
+            target.mkdirs();
+            if (!target.exists() || !target.isDirectory()) {
+                throw new IOException("cannot create checkpoint target: " + target);
+            }
+            copyChildren(temp, target);
+            if (!target.child(GAME_FILE).exists()) {
+                throw new IOException("checkpoint target is missing " + GAME_FILE);
+            }
+
+            deleteRequired(backup);
+            backupReady = false;
+
+        } catch (IOException | RuntimeException e) {
+            try {
+                deleteRequired(target);
+                if (backupReady && backup.exists()) {
+                    target.mkdirs();
+                    copyChildren(backup, target);
+                }
+            } catch (Exception rollbackError) {
+                e.addSuppressed(rollbackError);
+            }
+
+            if (e instanceof IOException) throw (IOException)e;
             throw new IOException(e);
+
         } finally {
-            if (temp.exists()) temp.deleteDirectory();
+            try {
+                deleteRequired(temp);
+            } catch (IOException ignored) {
+                // Best effort cleanup only.
+            }
+            if (!backupReady) {
+                try {
+                    deleteRequired(backup);
+                } catch (IOException ignored) {
+                    // Best effort cleanup only.
+                }
+            }
+        }
+    }
+
+    private static void deleteRequired(FileHandle file) throws IOException {
+        if (file == null || !file.exists()) return;
+
+        boolean deleted = file.isDirectory() ? file.deleteDirectory() : file.delete();
+        if (!deleted && file.exists()) {
+            throw new IOException("cannot delete: " + file);
         }
     }
 
     private static void copyChildren(FileHandle source, FileHandle target) {
+        if (!target.exists()) target.mkdirs();
         for (FileHandle child : source.list()) {
             FileHandle out = target.child(child.name());
             if (child.isDirectory()) {
