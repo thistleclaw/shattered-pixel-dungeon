@@ -181,7 +181,21 @@ public class GamesInProgress {
 	}
 	
 	public static void delete( int slot ) {
+		//Normal Shattered invalidates the active slot on final death. In this
+		//fork we immediately put the last floor-entry checkpoint back into the
+		//slot, while keeping the dead hero in memory so the usual game-over UI
+		//can still be shown. This means a battery/app kill on that screen does
+		//not make the checkpoint unreachable on the next launch.
+		boolean finalDeath = slot == curSlot
+				&& Dungeon.hero != null
+				&& !Dungeon.hero.isAlive()
+				&& AdventureSaves.autoExists();
+
 		slotStates.put( slot, null );
+
+		if (finalDeath) {
+			AdventureSaves.restoreAuto();
+		}
 	}
 	
 	public static class Info {
@@ -220,7 +234,6 @@ public class GamesInProgress {
 			} else {
 				return lastPlayedComparator.compare(lhs, rhs);
 			}
-		}
 	};
 
 	public static final Comparator<GamesInProgress.Info> lastPlayedComparator = new Comparator<GamesInProgress.Info>() {
