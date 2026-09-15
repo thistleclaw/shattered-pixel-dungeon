@@ -11,7 +11,7 @@ buildscript {
 allprojects {
 
     ext {
-        appName = 'Shattered Pixel Dungeon Adventure'
+        appName = 'Shattered Pixel Dungeon: Adventure'
         appPackageName = 'com.thistleclaw.shatteredpd.adventure'
 
         appVersionCode = 866
