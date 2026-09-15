@@ -1,0 +1,1 @@
+This branch contains the localization placeholder fix released as Adventure 4.0.0-adventure2. libGDX `I18NBundle` uses MessageFormat-style placeholders (`{0}`, `{1}`), not printf-style `%s`/`%d` tokens.
