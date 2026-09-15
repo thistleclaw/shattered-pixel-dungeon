@@ -24,7 +24,7 @@ Starting a genuinely new run in a reused game slot clears checkpoints from the p
 
 ## Localization
 
-The current v4 edition ships Adventure Mode UI strings in English and Russian. Other game languages fall back to the English Adventure strings.
+Adventure Mode UI additions ship in English and Russian. Other game languages fall back to the English Adventure strings.
 
 ## Android builds
 
@@ -33,10 +33,10 @@ The `Adventure v4 Android build` GitHub Actions workflow produces two APK artifa
 - `shattered-pd-adventure-v4-debug` — installable development APK, signed with the Android debug key.
 - `shattered-pd-adventure-v4-release-unsigned` — optimized release APK produced by the release Gradle variant. It still needs signing with a persistent private Android signing key before public distribution.
 
-A permanent signing key should be kept outside the public repository. Do not commit a keystore or its passwords.
+A permanent signing key should be kept outside the public repository. Do not commit a keystore or its passwords. See [`docs/adventure-release-signing.md`](docs/adventure-release-signing.md) for the release procedure.
 
 ## Upstream and license
 
 Shattered Pixel Dungeon is created by Evan Debenham and is based on Pixel Dungeon by Watabou. Adventure Mode is a downstream modification and is not an official Shattered Pixel Dungeon release.
 
-The code remains licensed under **GPL-3.0-or-later**, matching the upstream project. See [`LICENSE`](LICENSE) and the original project for full licensing and attribution information.
+The code remains licensed under **GPL-3.0-or-later**, matching the upstream project. See [`LICENSE.txt`](LICENSE.txt) and the original project for full licensing and attribution information.
