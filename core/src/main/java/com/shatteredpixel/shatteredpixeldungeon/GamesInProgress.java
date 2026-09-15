@@ -195,6 +195,10 @@ public class GamesInProgress {
 
 		if (finalDeath) {
 			AdventureSaves.restoreAuto();
+		} else {
+			//Victory or an explicit erase should really remove the whole run,
+			//including its rollback snapshots.
+			AdventureSaves.clearForNewRun(slot);
 		}
 	}
 	
@@ -233,7 +237,7 @@ public class GamesInProgress {
 				return (int)Math.signum( rhs.level - lhs.level );
 			} else {
 				return lastPlayedComparator.compare(lhs, rhs);
-			}
+		}
 	};
 
 	public static final Comparator<GamesInProgress.Info> lastPlayedComparator = new Comparator<GamesInProgress.Info>() {
