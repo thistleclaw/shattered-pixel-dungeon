@@ -103,7 +103,7 @@ public class WndAdventureSaves extends WndOptions {
                     if (exists) {
                         confirmOverwrite(slot);
                     } else {
-                        saveManual(slot);
+                        saveManualAndRefresh(slot);
                     }
                 } else {
                     confirmLoadManual(slot);
@@ -112,7 +112,7 @@ public class WndAdventureSaves extends WndOptions {
         });
     }
 
-    private static void confirmOverwrite(final int slot) {
+    private void confirmOverwrite(final int slot) {
         GameScene.show(new WndOptions(
                 "Перезаписать слот " + slot + "?",
                 "Старое ручное сохранение будет заменено текущим состоянием игры.",
@@ -121,7 +121,7 @@ public class WndAdventureSaves extends WndOptions {
         ) {
             @Override
             protected void onSelect(int index) {
-                if (index == 0) saveManual(slot);
+                if (index == 0) saveManualAndRefresh(slot);
             }
         });
     }
@@ -158,9 +158,14 @@ public class WndAdventureSaves extends WndOptions {
         });
     }
 
-    private static void saveManual(int slot) {
+    private void saveManualAndRefresh(int slot) {
         if (AdventureSaves.saveManual(slot)) {
             GLog.p("Игра сохранена в ручной слот " + slot + ".");
+            //WndOptions builds labels/enabled state only once in its constructor.
+            //Recreate this window so a newly written slot is immediately visible
+            //instead of still looking empty until the menu is closed and reopened.
+            hide();
+            GameScene.show(new WndAdventureSaves());
         } else {
             GLog.w("Не удалось сохранить игру.");
         }
