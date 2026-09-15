@@ -25,6 +25,7 @@ import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.GamesInProgress;
 import com.shatteredpixel.shatteredpixeldungeon.SPDSettings;
 import com.shatteredpixel.shatteredpixeldungeon.ShatteredPixelDungeon;
+import com.shatteredpixel.shatteredpixeldungeon.messages.AdventureMessages;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.HeroSelectScene;
@@ -60,6 +61,18 @@ public class WndGame extends Window {
 			}
 		});
 		curBtn.icon(Icons.get(Icons.PREFS));
+
+		//Adventure Mode save/load menu. After death the label makes the recovery
+		//action explicit rather than hiding it behind a generic "Saves" button.
+		boolean dead = Dungeon.hero != null && !Dungeon.hero.isAlive();
+		addButton( curBtn = new RedButton(AdventureMessages.get(dead ? "menu_load" : "menu_saves")) {
+			@Override
+			protected void onClick() {
+				hide();
+				GameScene.show(new WndAdventureSaves());
+			}
+		});
+		curBtn.icon(Icons.get(Icons.COPY));
 
 		// Challenges window
 		if (Dungeon.challenges > 0) {
