@@ -19,9 +19,9 @@ import java.io.IOException;
 /**
  * Checkpoint support for the Adventure Mode fork.
  *
- * Shattered already serializes a complete run into gameN/.  AdventureSaves
- * simply snapshots that directory outside the normal run folder, so regular
- * death cleanup cannot destroy the checkpoints.
+ * Shattered already serializes a complete run into gameN/. AdventureSaves
+ * snapshots that directory outside the normal run folder, so regular death
+ * cleanup cannot destroy the checkpoints.
  */
 public final class AdventureSaves {
 
@@ -30,6 +30,8 @@ public final class AdventureSaves {
 
     private static final String ROOT = "adventure_saves";
     private static final String GAME_FILE = "game.dat";
+    private static final String TMP_SUFFIX = ".adventure_tmp";
+    private static final String BACKUP_SUFFIX = ".adventure_backup";
 
     private AdventureSaves() {}
 
@@ -45,7 +47,17 @@ public final class AdventureSaves {
         return "manual" + index;
     }
 
+    /**
+     * Called when a save slot starts a genuinely new run. Manual/auto saves are
+     * intentionally per-run, so old checkpoints from a previous run in the same
+     * slot must not leak into a new game (especially with reused custom seeds).
+     */
+    public static void clearForNewRun(int slot) {
+        FileUtils.deleteDir(slotRoot(slot));
+    }
+
     public static boolean manualExists(int index) {
+        if (index < 1 || index > MANUAL_SLOTS) return false;
         return checkpointExistsForCurrentRun(manualId(index));
     }
 
@@ -62,13 +74,23 @@ public final class AdventureSaves {
     }
 
     public static int checkpointDepth(String id) {
-        Meta meta = readMeta(GamesInProgress.curSlot, id);
-        if (meta == null || meta.seed != Dungeon.seed) return -1;
-        return meta.depth;
+        Meta meta = validMetaForCurrentRun(id);
+        return meta == null ? -1 : meta.depth;
+    }
+
+    public static int checkpointBranch(String id) {
+        Meta meta = validMetaForCurrentRun(id);
+        return meta == null ? -1 : meta.branch;
     }
 
     public static int manualDepth(int index) {
+        if (index < 1 || index > MANUAL_SLOTS) return -1;
         return checkpointDepth(manualId(index));
+    }
+
+    public static int manualBranch(int index) {
+        if (index < 1 || index > MANUAL_SLOTS) return -1;
+        return checkpointBranch(manualId(index));
     }
 
     /** Called after the normal game save is complete. */
@@ -81,8 +103,9 @@ public final class AdventureSaves {
         if (old != null
                 && old.seed == Dungeon.seed
                 && old.depth == Dungeon.depth
-                && old.branch == Dungeon.branch) {
-            return; //already have the entry checkpoint for this floor
+                && old.branch == Dungeon.branch
+                && checkpointHasCurrentDepthFile(slot, AUTO, old)) {
+            return; //already have the entry checkpoint for this floor/branch
         }
 
         try {
@@ -125,7 +148,7 @@ public final class AdventureSaves {
         FileHandle target = FileUtils.getFileHandle(GamesInProgress.gameFolder(slot));
 
         try {
-            replaceDirectory(source, target);
+            replaceDirectorySafely(source, target);
             GamesInProgress.setUnknown(slot);
             return true;
         } catch (IOException e) {
@@ -135,14 +158,31 @@ public final class AdventureSaves {
     }
 
     private static boolean checkpointExistsForCurrentRun(String id) {
-        Meta meta = readMeta(GamesInProgress.curSlot, id);
-        return meta != null && meta.seed == Dungeon.seed;
+        return validMetaForCurrentRun(id) != null;
+    }
+
+    private static Meta validMetaForCurrentRun(String id) {
+        int slot = GamesInProgress.curSlot;
+        Meta meta = readMeta(slot, id);
+        if (meta == null || meta.seed != Dungeon.seed) return null;
+        if (!checkpointHasCurrentDepthFile(slot, id, meta)) return null;
+        return meta;
+    }
+
+    private static boolean checkpointHasCurrentDepthFile(int slot, String id, Meta meta) {
+        String depthFile;
+        if (meta.branch == 0) {
+            depthFile = "depth" + meta.depth + ".dat";
+        } else {
+            depthFile = "depth" + meta.depth + "-branch" + meta.branch + ".dat";
+        }
+        return FileUtils.fileExists(checkpointPath(slot, id) + "/" + depthFile);
     }
 
     private static void copyCurrentGameTo(int slot, String id) throws IOException {
         FileHandle source = FileUtils.getFileHandle(GamesInProgress.gameFolder(slot));
         FileHandle target = FileUtils.getFileHandle(checkpointPath(slot, id));
-        replaceDirectory(source, target);
+        replaceDirectorySafely(source, target);
     }
 
     private static Meta readMeta(int slot, String id) {
@@ -161,17 +201,48 @@ public final class AdventureSaves {
         }
     }
 
-    private static void replaceDirectory(FileHandle source, FileHandle target) throws IOException {
+    /**
+     * Replaces a directory without deleting the previous copy until the new
+     * copy has been written completely. This matters on older devices and also
+     * protects a manual checkpoint from a failed overwrite.
+     */
+    private static void replaceDirectorySafely(FileHandle source, FileHandle target) throws IOException {
         if (source == null || !source.exists() || !source.isDirectory()) {
             throw new IOException("checkpoint directory does not exist");
         }
 
+        FileHandle parent = target.parent();
+        FileHandle temp = parent.child(target.name() + TMP_SUFFIX);
+        FileHandle backup = parent.child(target.name() + BACKUP_SUFFIX);
+
         try {
-            if (target.exists()) target.deleteDirectory();
-            target.mkdirs();
-            copyChildren(source, target);
+            if (temp.exists()) temp.deleteDirectory();
+            temp.mkdirs();
+            copyChildren(source, temp);
+
+            if (backup.exists()) backup.deleteDirectory();
+            if (target.exists()) target.moveTo(backup);
+
+            try {
+                temp.moveTo(target);
+            } catch (RuntimeException moveError) {
+                if (target.exists()) target.deleteDirectory();
+                if (backup.exists()) backup.moveTo(target);
+                throw moveError;
+            }
+
+            if (backup.exists()) backup.deleteDirectory();
+
         } catch (RuntimeException e) {
+            //Best-effort rollback. Never intentionally delete the only good copy.
+            try {
+                if (!target.exists() && backup.exists()) backup.moveTo(target);
+            } catch (RuntimeException ignored) {
+                //The original exception is more useful to report.
+            }
             throw new IOException(e);
+        } finally {
+            if (temp.exists()) temp.deleteDirectory();
         }
     }
 
