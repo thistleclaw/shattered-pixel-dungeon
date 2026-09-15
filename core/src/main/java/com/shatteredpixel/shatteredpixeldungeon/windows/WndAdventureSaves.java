@@ -23,7 +23,7 @@ public class WndAdventureSaves extends WndOptions {
     public WndAdventureSaves() {
         super(
                 "Сохранения",
-                "Автосейв создаётся при первом входе на каждый этаж. Ручные слоты можно перезаписывать когда угодно.",
+                "Хранится один последний автосейв — момент входа на текущий этаж. Ручные слоты сохраняют точный текущий ход.",
                 autoLabel(),
                 manualLabel(1),
                 manualLabel(2),
@@ -31,67 +31,146 @@ public class WndAdventureSaves extends WndOptions {
         );
     }
 
+    private static String location(int depth, int branch) {
+        if (depth <= 0) return "пусто";
+        if (branch == 0) return "этаж " + depth;
+        if (branch == 1) return "этаж " + depth + " · шахта";
+        return "этаж " + depth + " · ветка " + branch;
+    }
+
     private static String autoLabel() {
         int depth = AdventureSaves.checkpointDepth(AdventureSaves.AUTO);
-        return depth > 0 ? "Автосейв этажа " + depth : "Автосейв этажа (пусто)";
+        int branch = AdventureSaves.checkpointBranch(AdventureSaves.AUTO);
+        return depth > 0 ? "Автосейв — " + location(depth, branch) : "Автосейв (пусто)";
     }
 
     private static String manualLabel(int slot) {
         int depth = AdventureSaves.manualDepth(slot);
-        return depth > 0 ? "Ручной слот " + slot + " — этаж " + depth : "Ручной слот " + slot + " (пусто)";
+        int branch = AdventureSaves.manualBranch(slot);
+        return depth > 0 ? "Ручной " + slot + " — " + location(depth, branch) : "Ручной " + slot + " (пусто)";
+    }
+
+    private static boolean heroAlive() {
+        return Dungeon.hero != null && Dungeon.hero.isAlive();
     }
 
     @Override
     protected boolean enabled(int index) {
         if (index == 0) return AdventureSaves.autoExists();
         int slot = index;
-        return (Dungeon.hero != null && Dungeon.hero.isAlive()) || AdventureSaves.manualExists(slot);
+        return heroAlive() || AdventureSaves.manualExists(slot);
     }
 
     @Override
     protected void onSelect(int index) {
         if (index == 0) {
-            loadAuto();
+            if (heroAlive()) {
+                confirmLoadAuto();
+            } else {
+                loadAuto();
+            }
         } else {
-            showManualSlot(index);
+            int slot = index;
+            if (heroAlive()) {
+                showManualSlot(slot);
+            } else {
+                //After death saving is impossible, so one tap on a populated
+                //manual slot should simply restore it.
+                loadManual(slot);
+            }
         }
     }
 
     private void showManualSlot(final int slot) {
         final boolean exists = AdventureSaves.manualExists(slot);
-        final boolean canSave = Dungeon.hero != null && Dungeon.hero.isAlive();
+        final int depth = AdventureSaves.manualDepth(slot);
+        final int branch = AdventureSaves.manualBranch(slot);
 
         GameScene.show(new WndOptions(
                 "Ручной слот " + slot,
-                exists ? "В этом слоте уже есть сохранение." : "Этот слот пока пуст.",
-                "Сохранить сюда",
+                exists ? "Сохранено: " + location(depth, branch) + "." : "Этот слот пока пуст.",
+                exists ? "Перезаписать" : "Сохранить сюда",
                 "Загрузить"
         ) {
             @Override
             protected boolean enabled(int index) {
-                return index == 0 ? canSave : exists;
+                return index == 0 || exists;
             }
 
             @Override
             protected void onSelect(int index) {
                 if (index == 0) {
-                    if (AdventureSaves.saveManual(slot)) {
-                        GLog.p("Игра сохранена в ручной слот " + slot + ".");
+                    if (exists) {
+                        confirmOverwrite(slot);
                     } else {
-                        GLog.w("Не удалось сохранить игру.");
+                        saveManual(slot);
                     }
                 } else {
-                    loadManual(slot);
+                    confirmLoadManual(slot);
                 }
             }
         });
+    }
+
+    private static void confirmOverwrite(final int slot) {
+        GameScene.show(new WndOptions(
+                "Перезаписать слот " + slot + "?",
+                "Старое ручное сохранение будет заменено текущим состоянием игры.",
+                "Перезаписать",
+                "Отмена"
+        ) {
+            @Override
+            protected void onSelect(int index) {
+                if (index == 0) saveManual(slot);
+            }
+        });
+    }
+
+    private static void confirmLoadAuto() {
+        int depth = AdventureSaves.checkpointDepth(AdventureSaves.AUTO);
+        int branch = AdventureSaves.checkpointBranch(AdventureSaves.AUTO);
+        GameScene.show(new WndOptions(
+                "Загрузить автосейв?",
+                "Откатиться к моменту входа: " + location(depth, branch) + "? Текущий прогресс после него будет потерян.",
+                "Загрузить",
+                "Отмена"
+        ) {
+            @Override
+            protected void onSelect(int index) {
+                if (index == 0) loadAuto();
+            }
+        });
+    }
+
+    private static void confirmLoadManual(final int slot) {
+        int depth = AdventureSaves.manualDepth(slot);
+        int branch = AdventureSaves.manualBranch(slot);
+        GameScene.show(new WndOptions(
+                "Загрузить ручной слот " + slot + "?",
+                "Откатиться к сохранению: " + location(depth, branch) + "? Текущий прогресс после него будет потерян.",
+                "Загрузить",
+                "Отмена"
+        ) {
+            @Override
+            protected void onSelect(int index) {
+                if (index == 0) loadManual(slot);
+            }
+        });
+    }
+
+    private static void saveManual(int slot) {
+        if (AdventureSaves.saveManual(slot)) {
+            GLog.p("Игра сохранена в ручной слот " + slot + ".");
+        } else {
+            GLog.w("Не удалось сохранить игру.");
+        }
     }
 
     private static void loadAuto() {
         if (AdventureSaves.restoreAuto()) {
             continueFromCheckpoint();
         } else {
-            GLog.w("Автосейв недоступен.");
+            GLog.w("Автосейв недоступен или повреждён.");
         }
     }
 
@@ -99,7 +178,7 @@ public class WndAdventureSaves extends WndOptions {
         if (AdventureSaves.restoreManual(slot)) {
             continueFromCheckpoint();
         } else {
-            GLog.w("Это сохранение недоступно.");
+            GLog.w("Это сохранение недоступно или повреждено.");
         }
     }
 
