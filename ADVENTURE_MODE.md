@@ -18,14 +18,14 @@ The ordinary dungeon generation, enemies, loot, hunger, bosses and combat balanc
 
 - App name: **Shattered Pixel Dungeon: Adventure**
 - Application ID: `com.thistleclaw.shatteredpd.adventure`
-- Current legacy version: `3.2.1-adventure6`
+- Current legacy version: `3.2.1-adventure7`
 - Minimum Android: **4.0 / API 14**
 
 Debug builds add the usual `.indev` suffix to the application ID.
 
 ## Localization
 
-Adventure Mode UI additions ship in English and Russian. Other game languages fall back to the English Adventure strings.
+Adventure Mode UI additions ship in English and Russian. Other game languages fall back to the English Adventure strings. Adventure bundle parameters use libGDX/MessageFormat placeholders (`{0}`, `{1}`), and CI rejects accidental printf-style `%s`/`%d` placeholders.
 
 ## Builds
 
