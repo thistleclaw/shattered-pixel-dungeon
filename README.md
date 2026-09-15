@@ -13,7 +13,7 @@ This branch is based on **Shattered Pixel Dungeon 3.2.1** and is kept for old de
 
 This branch is the second row: the legacy compatibility build.
 
-See **[ADVENTURE_MODE.md](ADVENTURE_MODE.md)** for save behavior, build details and compatibility notes.
+See **[ADVENTURE_MODE.md](ADVENTURE_MODE.md)** for save behavior, build details and compatibility notes. Release signing is documented in **[docs/adventure-release-signing.md](docs/adventure-release-signing.md)**.
 
 ## Upstream
 
@@ -23,4 +23,4 @@ This fork is **not an official Shattered Pixel Dungeon release**.
 
 ## License
 
-The project remains licensed under **GPL-3.0-or-later**. See [LICENSE](LICENSE).
+The project remains licensed under **GPL-3.0-or-later**. See [LICENSE.txt](LICENSE.txt).
