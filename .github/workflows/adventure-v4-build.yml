@@ -41,3 +41,19 @@ jobs:
           name: shattered-pd-adventure-v4-release-unsigned
           path: android/build/outputs/apk/release/*.apk
           if-no-files-found: error
+
+      - name: Export Android apksigner
+        shell: bash
+        run: |
+          set -euo pipefail
+          BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n1)"
+          mkdir -p /tmp/apksigner-tool/lib
+          cp "$BUILD_TOOLS/apksigner" /tmp/apksigner-tool/
+          cp "$BUILD_TOOLS/lib/apksigner.jar" /tmp/apksigner-tool/lib/
+
+      - name: Upload apksigner tool
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apksigner-tool
+          path: /tmp/apksigner-tool
+          if-no-files-found: error
